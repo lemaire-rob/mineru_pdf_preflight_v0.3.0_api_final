@@ -1,0 +1,52 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Static compile check
+        run: python -m compileall app.py src tests
+
+      - name: Build EXE
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name MinerU_PDF_Preflight --collect-all PySide6 --collect-all fitz --collect-all mineru app.py
+
+      - name: Verify EXE exists
+        shell: pwsh
+        run: |
+          if (!(Test-Path "dist/MinerU_PDF_Preflight.exe")) { throw "EXE missing" }
+          Get-ChildItem dist
+
+      - name: Package artifact
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item dist/MinerU_PDF_Preflight.exe release/
+          Copy-Item README.md release/
+          Copy-Item MEMORY_SAFE_MODE.md release/
+          Copy-Item API_BINDING.md release/
+          Compress-Archive -Path release/* -DestinationPath MinerU_PDF_Preflight_v0.3.0_windows_exe.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MinerU_PDF_Preflight_v0.3.0_windows_exe
+          path: MinerU_PDF_Preflight_v0.3.0_windows_exe.zip

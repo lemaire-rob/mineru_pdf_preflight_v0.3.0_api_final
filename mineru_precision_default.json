@@ -1,0 +1,13 @@
+{
+  "name": "MinerU 精准解析默认规则",
+  "rule": {
+    "max_pages": 200,
+    "max_size_mb": 200,
+    "strategy": "both",
+    "compression_level": "medium",
+    "min_dpi": 150,
+    "keep_bookmarks": true,
+    "keep_ocr_text": true,
+    "filename_template": "{name}__part{part:03d}_p{start:03d}-{end:03d}.pdf"
+  }
+}

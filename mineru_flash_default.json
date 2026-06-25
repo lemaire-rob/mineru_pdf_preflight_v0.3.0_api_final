@@ -1,0 +1,13 @@
+{
+  "name": "MinerU Agent轻量解析规则",
+  "rule": {
+    "max_pages": 20,
+    "max_size_mb": 10,
+    "strategy": "both",
+    "compression_level": "medium",
+    "min_dpi": 150,
+    "keep_bookmarks": true,
+    "keep_ocr_text": true,
+    "filename_template": "{name}__flash_part{part:03d}_p{start:03d}-{end:03d}.pdf"
+  }
+}
