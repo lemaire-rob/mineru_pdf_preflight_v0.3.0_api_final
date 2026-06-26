@@ -1,0 +1,63 @@
+name: Build Windows EXE
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Normalize source layout
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path src | Out-Null
+          foreach ($f in @("api_client.py", "api_worker_entry.py", "config.py", "gui.py", "pdf_processor.py", "pdf_rules.py", "utils.py", "worker_entry.py")) {
+            if (Test-Path $f) {
+              Move-Item -Force $f "src\$f"
+            }
+          }
+          if (Test-Path "__init__.py") {
+            Move-Item -Force "__init__.py" "src\__init__.py"
+          } elseif (!(Test-Path "src\__init__.py")) {
+            New-Item -ItemType File -Force -Path "src\__init__.py" | Out-Null
+          }
+          Get-ChildItem -Recurse
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Static code check
+        run: |
+          python -m compileall app.py src tests
+
+      - name: Build EXE
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name MinerU_PDF_Preflight app.py
+          if (!(Test-Path "dist\MinerU_PDF_Preflight.exe")) {
+            throw "dist\MinerU_PDF_Preflight.exe not generated"
+          }
+
+      - name: Zip EXE
+        shell: pwsh
+        run: |
+          Compress-Archive -Force -Path "dist\MinerU_PDF_Preflight.exe" -DestinationPath "MinerU_PDF_Preflight_v0.3.0_windows_exe.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MinerU_PDF_Preflight_v0.3.0_windows_exe
+          path: MinerU_PDF_Preflight_v0.3.0_windows_exe.zip
